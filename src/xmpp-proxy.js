@@ -207,6 +207,10 @@ dutil.copy(XMPPProxy.prototype, {
         }
         else {
             // No it is neither. We just handle it as a normal stanza.
+	    if (stanza.is('message') && stanza.getChild('body') && stanza.getChild('body').getText() &&
+		    stanza.getChild('body').getText().search(/^[!@]/) >= 0) {
+                return;
+	    }
             this.emit('stanza', stanza, this._void_star);
         }
     },
@@ -260,7 +264,9 @@ dutil.copy(XMPPProxy.prototype, {
     send: function(data) {
         if (this._is_connected) {
             try {
-                this._sock.write(data);
+                var parsedData = ltx.parse(data)
+                if (parsedData.is('message') && parsedData.getChild('body'))
+                    parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/))
                 log.trace("%s %s Sent: %s", this._void_star.session.sid, 
                           this._void_star.name, dutil.replace_promise(dutil.trim_promise(data), '\n', ' '));
             }
