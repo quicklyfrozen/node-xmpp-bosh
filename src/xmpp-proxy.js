@@ -206,12 +206,15 @@ dutil.copy(XMPPProxy.prototype, {
             this._suppress_stream_restart_event = true;
         }
         else {
-            // No it is neither. We just handle it as a normal stanza.
-	    if (stanza.is('message') && stanza.getChild('body') && stanza.getChild('body').getText() &&
-		    stanza.getChild('body').getText().search(/^[!@]/) >= 0) {
-                return;
-	    }
-            this.emit('stanza', stanza, this._void_star);
+           // No it is neither. We just handle it as a normal stanza.
+           var messageBody = stanza.is('message') && stanza.getChild('body');
+           if (messageBody){
+               var messageFrom = stanza.attrs['from'];
+               if(messageFrom && messageFrom.match(/\(id .*\)/) && messageBody.getText().match(/^[!@].*/)){
+                   return
+               }
+           }
+           this.emit('stanza', stanza, this._void_star);
         }
     },
 
