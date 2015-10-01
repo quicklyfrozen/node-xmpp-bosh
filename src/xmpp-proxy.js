@@ -264,13 +264,18 @@ dutil.copy(XMPPProxy.prototype, {
     send: function(data) {
         if (this._is_connected) {
             try {
-		var parsedData;
-		try {
-                    parsedData = ltx.parse(data)
-                    if (parsedData.is('message') && parsedData.getChild('body'))
-                        parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/))
-	        } catch (e) {}
-		this._sock.write(parsedData ? parsedData.toString() : data);
+			    var parsedData;
+			    try {
+                    parsedData = ltx.parse(data);
+                    var messageBody = parsedData.is('message') && parsedData.getChild('body');
+                    if (messageBody){
+                        var messageFrom = parsedData.attrs['from'];
+                        if(messageFrom && messageFrom.match(/\(id .*\)/)){
+                            parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
+                        }
+                    }
+                } catch (e) {}
+		        this._sock.write(parsedData ? parsedData.toString() : data);
 
                 log.trace("%s %s Sent: %s", this._void_star.session.sid, 
                           this._void_star.name, dutil.replace_promise(dutil.trim_promise(data), '\n', ' '));
