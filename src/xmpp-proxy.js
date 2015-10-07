@@ -209,9 +209,10 @@ dutil.copy(XMPPProxy.prototype, {
            // No it is neither. We just handle it as a normal stanza.
            var messageBody = stanza.is('message') && stanza.getChild('body');
            if (messageBody){
+               var messageTo = stanza.attrs['to'];
                var messageFrom = stanza.attrs['from'];
-               if(messageFrom && messageBody.getText().match(/^[!@].*/) &&
-                  (!messageFrom.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
+               if(messageFrom && messageTo && messageBody.getText().match(/^[!@].*/) &&
+                  (!messageTo.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
                    return
                }
            }
@@ -273,8 +274,9 @@ dutil.copy(XMPPProxy.prototype, {
                     parsedData = ltx.parse(data);
                     var messageBody = parsedData.is('message') && parsedData.getChild('body');
                     if (messageBody){
+                        var messageTo = parsedData.attrs['to'];
                         var messageFrom = parsedData.attrs['from'];
-                        if(messageFrom && (!messageFrom.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
+                        if(messageFrom && messageTo && (!messageTo.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
                             parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
                         }
                     }
