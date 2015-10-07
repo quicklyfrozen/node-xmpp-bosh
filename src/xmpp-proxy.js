@@ -211,7 +211,7 @@ dutil.copy(XMPPProxy.prototype, {
            if (messageBody){
                var messageFrom = stanza.attrs['from'];
                if(messageFrom && messageBody.getText().match(/^[!@].*/) &&
-                  !messageFrom.match(/^main_thread_/)){
+                  (!messageFrom.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
                    return
                }
            }
@@ -274,11 +274,13 @@ dutil.copy(XMPPProxy.prototype, {
                     var messageBody = parsedData.is('message') && parsedData.getChild('body');
                     if (messageBody){
                         var messageFrom = parsedData.attrs['from'];
-                        if(messageFrom && (!messageFrom.match(/_main_thread_/) || messageFrom.match(/\(id .*\)/))){
+                        if(messageFrom && (!messageFrom.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
                             parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
                         }
                     }
-                } catch (e) {}
+                } catch (e) {
+                  console.log(e);
+                }
 		        this._sock.write(parsedData ? parsedData.toString() : data);
 
                 log.trace("%s %s Sent: %s", this._void_star.session.sid,
