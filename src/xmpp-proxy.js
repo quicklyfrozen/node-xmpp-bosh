@@ -274,7 +274,7 @@ dutil.copy(XMPPProxy.prototype, {
                     var messageBody = parsedData.is('message') && parsedData.getChild('body');
                     if (messageBody){
                         var messageFrom = parsedData.attrs['from'];
-                        if(messageFrom && !messageFrom.match(/_main_thread_/)){
+                        if(messageFrom && (!messageFrom.match(/_main_thread_/) || messageFrom.match(/\(id .*\)/))){
                             parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
                         }
                     }
