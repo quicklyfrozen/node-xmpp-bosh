@@ -210,7 +210,7 @@ dutil.copy(XMPPProxy.prototype, {
            var messageBody = stanza.is('message') && stanza.getChild('body');
            if (messageBody){
                var messageFrom = stanza.attrs['from'];
-               if(messageFrom && messageFrom.match(/\(id .*\)/) && messageBody.getText().match(/^[!@].*/) &&
+               if(messageFrom && messageBody.getText().match(/^[!@].*/) &&
                   !messageFrom.match(/^main_thread_/)){
                    return
                }
@@ -274,7 +274,7 @@ dutil.copy(XMPPProxy.prototype, {
                     var messageBody = parsedData.is('message') && parsedData.getChild('body');
                     if (messageBody){
                         var messageFrom = parsedData.attrs['from'];
-                        if(messageFrom && messageFrom.match(/\(id .*\)/) && !messageFrom.match(/^main_thread_/)){
+                        if(messageFrom && !messageFrom.match(/^main_thread_/)){
                             parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
                         }
                     }
