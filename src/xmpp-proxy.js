@@ -212,7 +212,7 @@ dutil.copy(XMPPProxy.prototype, {
                var messageTo = stanza.attrs['to'];
                var messageFrom = stanza.attrs['from'];
                if(messageFrom && messageTo && messageBody.getText().match(/^[!@].*/) &&
-                  (!messageTo.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
+                  (!(messageTo.match(/main_thread_/) || messageFrom.match(/main_thread_/)) || messageFrom.match(/\(id .*\)/))){
                    return
                }
            }
@@ -276,7 +276,7 @@ dutil.copy(XMPPProxy.prototype, {
                     if (messageBody){
                         var messageTo = parsedData.attrs['to'];
                         var messageFrom = parsedData.attrs['from'];
-                        if(messageFrom && messageTo && (!messageTo.match(/main_thread_/) || messageFrom.match(/\(id .*\)/))){
+                        if(messageFrom && messageTo && (!(messageTo.match(/main_thread_/) || messageFrom.match(/main_thread_/)) || messageFrom.match(/\(id .*\)/))){
                             parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
                         }
                     }
