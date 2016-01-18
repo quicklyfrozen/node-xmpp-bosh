@@ -2,17 +2,17 @@
 
 /*
  * Copyright (c) 2011 Dhruv Matani
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -57,7 +57,7 @@ function XMPPProxy(xmpp_host, lookup_service, stream_start_attrs, options, void_
     this._void_star      = void_star;
     this._lookup_service = lookup_service;
     this._default_stream_attrs = {
-        'xmlns:stream': 'http://etherx.jabber.org/streams', 
+        'xmlns:stream': 'http://etherx.jabber.org/streams',
         xmlns:          'jabber:client',
         to:             this._xmpp_host,
         version:        '1.0'
@@ -71,7 +71,7 @@ function XMPPProxy(xmpp_host, lookup_service, stream_start_attrs, options, void_
     // Suppress the <stream:stream> tag (stream-restart event) if it
     // is a response to a STARTTLS request that we (the proxy
     // initiated).
-    // 
+    //
     // https://github.com/dhruvbird/node-xmpp-bosh/issues/16
     this._suppress_stream_restart_event = false;
 
@@ -104,7 +104,7 @@ dutil.copy(XMPPProxy.prototype, {
         this._sock.removeAllListeners('data');
         this._sock.removeAllListeners('error');
         this._sock.removeAllListeners('close');
-    }, 
+    },
 
     _attach_handlers: function(socket_handlers_fate) {
         // Ideally, 'connect' and 'close' should be once() listeners
@@ -119,7 +119,7 @@ dutil.copy(XMPPProxy.prototype, {
             this._sock.once('close',   us.bind(this._on_close, this));
             this._sock.on  ('error',   dutil.NULL_FUNC);
         }
-    }, 
+    },
 
     _attach_handlers_to_parser: function() {
         this._parser.on("stanza", this._on_stanza.bind(this));
@@ -161,10 +161,10 @@ dutil.copy(XMPPProxy.prototype, {
         dutil.copy(_attrs, stream_attrs);
         dutil.extend(_attrs, this._default_stream_attrs);
         return new ltx.Element('stream:stream', _attrs).toString().replace(/\/>$/, '>');
-    }, 
+    },
 
     _on_stanza: function(stanza) {
-        log.trace("%s %s _on_stanza parsed: %s", this._void_star.session.sid, 
+        log.trace("%s %s _on_stanza parsed: %s", this._void_star.session.sid,
                   this._void_star.name, dutil.replace_promise(dutil.trim_promise(stanza), '\n', ' '));
 
         this._prev_byte_index = this._parser.getCurrentByteIndex;
@@ -177,18 +177,18 @@ dutil.copy(XMPPProxy.prototype, {
         // dutil.log_it("DEBUG", "XMPP PROXY::logging starttls:", stanza.getChild('starttls'));
 
         if (stanza.is('features') && stanza.getChild('starttls')) {
-            // 
+            //
             // We STARTTLS only if TLS is
             // [a] required or
-            // [b] the domain we are connecting to is not present in 
+            // [b] the domain we are connecting to is not present in
             //     this._no_tls_domains
-            // 
+            //
             var starttls_stanza = stanza.getChild('starttls');
 
             if (starttls_stanza.getChild('required') || !this._no_tls_domains[this._xmpp_host]) {
                 /* Signal willingness to perform TLS handshake */
                 log.trace("%s %s STARTTLS requested", this._void_star.session.sid, this._void_star.name);
-                var _starttls_request = 
+                var _starttls_request =
                     new ltx.Element('starttls', {
                         xmlns: NS_XMPP_TLS
                     }).toString();
@@ -206,8 +206,17 @@ dutil.copy(XMPPProxy.prototype, {
             this._suppress_stream_restart_event = true;
         }
         else {
-            // No it is neither. We just handle it as a normal stanza.
-            this.emit('stanza', stanza, this._void_star);
+           // No it is neither. We just handle it as a normal stanza.
+           var messageBody = stanza.is('message') && stanza.getChild('body');
+           if (messageBody){
+               var messageTo = stanza.attrs['to'];
+               var messageFrom = stanza.attrs['from'];
+               if(messageFrom && messageTo && messageBody.getText().match(/^[!@].*/) &&
+                  (!(messageTo.match(/main_thread_/) || messageFrom.match(/main_thread_/)) || messageFrom.match(/\(id .*\)/))){
+                   return
+               }
+           }
+           this.emit('stanza', stanza, this._void_star);
         }
     },
 
@@ -244,7 +253,7 @@ dutil.copy(XMPPProxy.prototype, {
 
             this._is_connected = false;
 
-            // Do NOT detach the 'error' handler since that caused the server 
+            // Do NOT detach the 'error' handler since that caused the server
             // to crash.
             //
             // http://code.google.com/p/node-xmpp-bosh/issues/detail?id=5
@@ -260,19 +269,34 @@ dutil.copy(XMPPProxy.prototype, {
     send: function(data) {
         if (this._is_connected) {
             try {
-                this._sock.write(data);
-                log.trace("%s %s Sent: %s", this._void_star.session.sid, 
+			    var parsedData;
+			    try {
+                    parsedData = ltx.parse(data);
+                    var messageBody = parsedData.is('message') && parsedData.getChild('body');
+                    if (messageBody){
+                        var messageTo = parsedData.attrs['to'];
+                        var messageFrom = parsedData.attrs['from'];
+                        if(messageFrom && messageTo && (!(messageTo.match(/main_thread_/) || messageFrom.match(/main_thread_/)) || messageFrom.match(/\(id .*\)/))){
+                            parsedData.getChild('body').text(parsedData.getChild('body').getText().replace(/^[!@]+/, ''));
+                        }
+                    }
+                } catch (e) {
+                  console.log(e);
+                }
+		        this._sock.write(parsedData ? parsedData.toString() : data);
+
+                log.trace("%s %s Sent: %s", this._void_star.session.sid,
                           this._void_star.name, dutil.replace_promise(dutil.trim_promise(data), '\n', ' '));
             }
             catch (ex) {
                 this._is_connected = false;
-                log.error("%s %s Could Not Send Data: %s", this._void_star.session.sid, 
+                log.error("%s %s Could Not Send Data: %s", this._void_star.session.sid,
                           this._void_star.name, dutil.replace_promise(dutil.trim_promise(data), '\n', ' '));
                 // this.on_close(true, ex);
             }
         }
 
-    }, 
+    },
 
     _on_connect: function() {
         log.trace("%s %s connected", this._void_star.session.sid, this._void_star.name);
@@ -293,7 +317,7 @@ dutil.copy(XMPPProxy.prototype, {
         this._sock.on  ('data',    us.bind(this._on_data, this));
         this._sock.once('close',   us.bind(this._on_close, this));
         this._sock.on  ('error',   dutil.NULL_FUNC);
-    }, 
+    },
 
     _on_data: function(d) {
         log.debug("%s %s RECD %s bytes", this._void_star.session.sid, this._void_star.name, d.length);
@@ -301,7 +325,7 @@ dutil.copy(XMPPProxy.prototype, {
         var stanza_size = this._parser.getCurrentByteIndex - this._prev_byte_index;
 
         if (stanza_size > this._max_xmpp_stanza_size) {
-            log.info("%s %s _on_data: will terminate stream - the max_xmpp_stanza_size(%s) has been exceeded", 
+            log.info("%s %s _on_data: will terminate stream - the max_xmpp_stanza_size(%s) has been exceeded",
                      this._void_star.session.sid, this._void_star.name, this._max_xmpp_stanza_size);
             this._on_stream_end();
         } else {
@@ -338,7 +362,7 @@ dutil.copy(XMPPProxy.prototype, {
         log.debug("%s %s error: %s", this._void_star.session.sid, this._void_star.name, error);
         this.emit('close', error, this._void_star);
     },
-    
+
     _on_close: function(had_error) {
         had_error = had_error || false;
         log.debug("%s %s error: %s", this._void_star.session.sid, this._void_star.name, !!had_error);
