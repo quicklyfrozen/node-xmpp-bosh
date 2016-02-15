@@ -319,9 +319,33 @@ function HTTPServer(port, host, stat_func, system_info_func,
     }
 
     // Initialize
-    var server = http.createServer(http_request_handler);
-    server.on('error', http_error_handler);
-    server.listen(port, host);
+    if (!bosh_options.http_server) {
+        var server = http.createServer(http_request_handler);
+        server.on('error', http_error_handler);
+        server.listen(port, host);
+    } else {
+        var server = bosh_options.http_server;
+
+        var check = function(req) {
+            return bosh_options.path == req.url.substr(0, bosh_options.path.length);
+        };
+
+        // cache and clean up listeners
+        var listeners = server.listeners('request').slice(0);
+        server.removeAllListeners('request');
+    
+        // patch in request handler
+        server.on('request', function(req, res) {
+            if (bosh_options.path.test(req.url)) {
+                log.trace('intercepting request for path "%s"', req.url);
+                http_request_handler(req, res);
+            } else {
+                for (var i = 0, l = listeners.length; i < l; i++) {
+                    listeners[i].call(server, req, res);
+                }
+            }
+        });
+    }
 
     var req_timeout_interval = setInterval(handle_request_timeout, 15 * 1000);
 

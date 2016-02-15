@@ -81,6 +81,10 @@ function BOSH_Options(opts) {
 
 	log.debug("path: %s", this.path);
 
+    this.http_server = _opts.http_server || null;
+    
+    if (this.http_server) log.debug("http server specified");
+
     // The maximum number of bytes that the BOSH server will
     // "hold" from the client.
     this.MAX_DATA_HELD = _opts.max_data_held || 100000;
