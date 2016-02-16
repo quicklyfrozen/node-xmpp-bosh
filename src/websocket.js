@@ -87,6 +87,7 @@ exports.createServer = function(bosh_server, options, webSocket) {
     
     var websocket_server = new webSocket.Server({
         server:  bosh_server.server,
+        path: options.websocket_path,
         handleProtocols: function(protocols, callback) {
             var protocol;
 			var our_protocols = protocols.filter(function(protocol) {

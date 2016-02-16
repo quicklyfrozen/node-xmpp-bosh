@@ -95,7 +95,8 @@ exports.start_bosh = function(options) {
 exports.start_websocket = function(bosh_server, options, webSocket) {
 	options = options || { };
 	options = dutil.extend(options, {
-		websocket_ping_interval: 30
+		websocket_ping_interval: 30,
+		websocket_path: "/ws-bind/"
 	});
 
 	var ws_server = websocket.createServer(bosh_server, options, webSocket);

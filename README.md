@@ -76,6 +76,8 @@ Note: The **=** sign is important here. Replacing the equal sign with a space wi
 
 * **path**: The path to listen on **(default: /http-bind/)**
 
+* **http_server**: Specify http server to use instead of creating new http server. **(default: null)**
+
 * **port**: The port to listen on **(default: 5280)**
 
 * **host**: The host to listen on **(default: 0.0.0.0)**
@@ -110,6 +112,8 @@ Note: The **=** sign is important here. Replacing the equal sign with a space wi
 * **system_info_password**: The password used to protect the /PATH/sysinfo/ URL. The username to use when prompted for authentication is 'admin' **(default: [not set])**
 
 * **websocket_ping_interval**: The period, in seconds, between sending WebSocket ping frames to each client. If a client fails to respond with a pong frame twice in a row, the connection will be closed. Set to 0 to disable sending of WebSocket pings. **(default: 30)**
+
+* **websocket_path**: The path the websocket server should listen on. **(default: '/ws-bind/'')**
 
 ### Architecture
 
