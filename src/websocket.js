@@ -30,6 +30,7 @@ var ltx    = require('ltx');
 var util   = require('util');
 var uuid   = require('node-uuid');
 var dutil  = require('./dutil.js');
+var helper = require('./helper.js');
 var us     = require('underscore');
 var assert = require('assert').ok;
 var EventPipe = require('eventpipe').EventPipe;
@@ -297,6 +298,9 @@ exports.createServer = function(bosh_server, options, webSocket) {
                     // console.log("stream start attrs:", ss_node.attrs);
                     
                     sstate.to = ss_node.attrs.to;
+                    if (ss_node.attrs.route) {
+                        sstate.route = helper.route_parse(ss_node.attrs.route);
+                    }
                     wsep.emit('stream-add', sstate, ss_node.attrs);
                 } else if (sstate.stream_state === STREAM_OPENED) {
                     // Restart the current stream
